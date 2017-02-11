@@ -1,0 +1,18 @@
+model{
+
+for (i in 1:I){
+obs1[i] ~ dbin(pi1[i], all1[i])
+pi1[i] <- 1-exp(-lambda[study1[i]]*vol1[i])
+}
+
+for (j in 1:J){
+obs2[j,] ~ dmulti(pi2[j,], all2[j])
+pi2[j,1] <- 1-exp(-lambda[study2[j]]*vol2[j,1])
+pi2[j,2] <- exp(-lambda[study2[j]]*vol2[j,1])-exp(-lambda[study2[j]]*vol2[j,2])
+pi2[j,3] <- exp(-lambda[study2[j]]*vol2[j,2])
+}
+
+for (k in 1:K){lambda[k] ~ dlnorm(alpha, beta)} 
+alpha ~ dnorm(0,0.001)
+beta ~ dgamma(0.001,0.001) 
+}

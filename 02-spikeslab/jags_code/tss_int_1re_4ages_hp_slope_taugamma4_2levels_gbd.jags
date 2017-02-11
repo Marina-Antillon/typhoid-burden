@@ -1,0 +1,166 @@
+model{
+
+# TO DO:
+# input must include continent vector that tells me what continent each country is in. region[1]. 
+# country is still numbered 1:total number of countries anywhere (not by continent)
+# take mu out of init
+# beta is now a 6x4 matrix
+# TauBraw init: 6 for GBD super regions?
+# TauBeta into init
+
+  for(i in 1:I) { # age-specific incidence data
+    cases[i] ~ dpois(lambda[i, ages[i]]*part[i]) # multiply by the participation rate... Don't sample that, we know that exactly.
+
+    lambda[i,1] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Infants 0-2
+    lambda[i,2] <- lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Pre-K: 2-5
+    lambda[i,3] <- lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 5-15
+    lambda[i,4] <- lambdad[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Adults 15+
+    
+    lambda[i,5] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 0-5 
+    lambda[i,6] <- lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 2-15
+    lambda[i,7] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 0-15 
+    lambda[i,8] <- lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) + lambdad[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, 5+
+    lambda[i,9] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) + lambdad[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, all ages
+
+    log(lambdaa[i]) <- alpha[country[i]] + zeta1[country[i]] + sum(gamma*cov[i,]) + sum(gamma_int1*cov[i,]) + log(offseta[i]) # Young children, 0-1
+    log(lambdab[i]) <- alpha[country[i]] + zeta2[country[i]] + sum(gamma*cov[i,]) + sum(gamma_int2*cov[i,]) + log(offsetb[i]) # Pre-K, 2-4
+    log(lambdac[i]) <- alpha[country[i]] + sum(gamma*cov[i,]) + log(offsetc[i]) # Children 5-15
+    log(lambdad[i]) <- alpha[country[i]] + zeta3[country[i]] + sum(gamma*cov[i,]) + sum(gamma_int3*cov[i,]) + log(offsetd[i]) # Adults, 15+
+    
+    betau5[i] <- (1-exp(-betaprob*amtu5[i]))
+    betao5[i] <- (1-exp(-betaprob*amto5[i]))
+    }
+
+# This just makes it easier to add the results from the random effects structure into the equations above.
+   for(c in 1:C){
+        alpha[c] <- alphatemp[countryposition[c]]
+        zeta1[c] <- zeta1temp[countryposition[c]]
+        zeta2[c] <- zeta2temp[countryposition[c]]
+        zeta3[c] <- zeta3temp[countryposition[c]]
+    }
+
+    alphatemp[1:C1] <- Bcraw_r1[1:C1,1] 
+    alphatemp[C1+1:C1+C2] <- Bcraw_r2[1:C2,1]
+    alphatemp[C1+C2+1:C1+C2+C3] <- Bcraw_r3[1:C3,1]
+    alphatemp[C1+C2+C3+1:C1+C2+C3+C4] <- Bcraw_r4[1:C4,1]
+    alphatemp[C1+C2+C3+C4+1:C1+C2+C3+C4+C5] <- Bcraw_r5[1:C5,1]
+    alphatemp[C1+C2+C3+C4+C5+1:C1+C2+C3+C4+C5+C6] <- Bcraw_r6[1:C6,1]
+
+    zeta1temp[1:C1] <- Bcraw_r1[1:C1,2]
+    zeta1temp[C1+1:C1+C2] <- Bcraw_r2[1:C2,2] 
+    zeta1temp[C1+C2+1:C1+C2+C3] <- Bcraw_r3[1:C3,2]
+    zeta1temp[C1+C2+C3+1:C1+C2+C3+C4] <- Bcraw_r4[1:C4,2]
+    zeta1temp[C1+C2+C3+C4+1:C1+C2+C3+C4+C5] <- Bcraw_r5[1:C5,2]
+    zeta1temp[C1+C2+C3+C4+C5+1:C1+C2+C3+C4+C5+C6] <- Bcraw_r6[1:C6,2]
+
+    zeta2temp[1:C1] <- Bcraw_r1[1:C1,3] 
+    zeta2temp[C1+1:C1+C2] <- Bcraw_r2[1:C2,3]
+    zeta2temp[C1+C2+1:C1+C2+C3] <- Bcraw_r3[1:C3,3]
+    zeta2temp[C1+C2+C3+1:C1+C2+C3+C4] <- Bcraw_r4[1:C4,3]
+    zeta2temp[C1+C2+C3+C4+1:C1+C2+C3+C4+C5] <- Bcraw_r5[1:C5,3]
+    zeta2temp[C1+C2+C3+C4+C5+1:C1+C2+C3+C4+C5+C6] <- Bcraw_r6[1:C6,3]
+
+    zeta3temp[1:C1] <- Bcraw_r1[1:C1,4] 
+    zeta3temp[C1+1:C1+C2] <- Bcraw_r2[1:C2,4]
+    zeta3temp[C1+C2+1:C1+C2+C3] <- Bcraw_r3[1:C3,4]
+    zeta3temp[C1+C2+C3+1:C1+C2+C3+C4] <- Bcraw_r4[1:C4,4]
+    zeta3temp[C1+C2+C3+C4+1:C1+C2+C3+C4+C5] <- Bcraw_r5[1:C5,4]
+    zeta3temp[C1+C2+C3+C4+C5+1:C1+C2+C3+C4+C5+C6] <- Bcraw_r6[1:C6,4]
+
+# Random Effects - Slope only (this is the null model).
+
+# Level 2: ages within each site have a continent prior
+  # GBD region 1: random effects for each country, within continent 1
+    for(c1 in 1:C1) {Bcraw_r1[c1, 1:4] ~ dmnorm(beta[1,1:4], TauBraw1[,])}
+  # GBD region 2: random effects for each country, within continent 2
+    for(c2 in 1:C2) {Bcraw_r2[c2, 1:4] ~ dmnorm(beta[2,1:4], TauBraw2[,])}
+  # GBD region 3: random effects for each country, within continent 3
+    for(c3 in 1:C3) {Bcraw_r3[c3, 1:4] ~ dmnorm(beta[3,1:4], TauBraw3[,])}
+  # GBD region 4: random effects for each country, within continent 4
+    for(c4 in 1:C4) {Bcraw_r4[c4, 1:4] ~ dmnorm(beta[4,1:4], TauBraw4[,])}
+  # GBD region 5: random effects for each country, within continent 5
+    for(c5 in 1:C5) {Bcraw_r5[c5, 1:4] ~ dmnorm(beta[5,1:4], TauBraw5[,])}
+  # GBD region 6: random effects for each country, within continent 6
+    for(c6 in 1:C6) {Bcraw_r6[c6, 1:4] ~ dmnorm(beta[6,1:4], TauBraw6[,])}
+
+# We need one TauBraw for each continent.
+  # GBD region 1
+    TauBraw1[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw1[1:4, 1:4] <- inverse(TauBraw1[,])
+    sigma11 <- SigmaBraw1[1,] # this is just so we can pull it out of Jags and look at it.
+    sigma12 <- SigmaBraw1[2,]
+    sigma13 <- SigmaBraw1[3,]
+    sigma14 <- SigmaBraw1[4,]
+  # GBD region 2
+    TauBraw2[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw2[1:4, 1:4] <- inverse(TauBraw2[,])
+    sigma21 <- SigmaBraw2[1,] # this is just so we can pull it out of Jags and look at it.
+    sigma22 <- SigmaBraw2[2,]
+    sigma23 <- SigmaBraw2[3,]
+    sigma24 <- SigmaBraw2[4,]
+  # GBD region 3
+    TauBraw3[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw3[1:4, 1:4] <- inverse(TauBraw3[,])
+    sigma31 <- SigmaBraw3[1,] # this is just so we can pull it out of Jags and look at it.
+    sigma32 <- SigmaBraw3[2,]
+    sigma33 <- SigmaBraw3[3,]
+    sigma34 <- SigmaBraw3[4,]
+  # GBD region 4
+    TauBraw4[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw4[1:4, 1:4] <- inverse(TauBraw3[,])
+    sigma41 <- SigmaBraw4[1,] # this is just so we can pull it out of Jags and look at it.
+    sigma42 <- SigmaBraw4[2,]
+    sigma43 <- SigmaBraw4[3,]
+    sigma44 <- SigmaBraw4[4,]
+  # GBD region 5
+    TauBraw5[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw5[1:4, 1:4] <- inverse(TauBraw3[,])
+    sigma51 <- SigmaBraw5[1,] # this is just so we can pull it out of Jags and look at it.
+    sigma52 <- SigmaBraw5[2,]
+    sigma53 <- SigmaBraw5[3,]
+    sigma54 <- SigmaBraw5[4,]
+  # GBD region 6
+    TauBraw6[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw6[1:4, 1:4] <- inverse(TauBraw3[,])
+    sigma61 <- SigmaBraw6[1,] # this is just so we can pull it out of Jags and look at it.
+    sigma62 <- SigmaBraw6[2,]
+    sigma63 <- SigmaBraw6[3,]
+    sigma64 <- SigmaBraw6[4,]
+
+# Level 1: hyperprior for the continent prior of ages in each site.
+    for (r in 1:R){beta[r, 1:4] ~ dmnorm(omega, TauBeta)} # rows are regions and columns are coefficients for age, 1 = referent, not youngest age
+        betaout1[1:4] <- beta[1,1:4] # just to pull it out in jags
+        betaout2[1:4] <- beta[2,1:4] 
+        betaout3[1:4] <- beta[3,1:4]
+        betaout4[1:4] <- beta[4,1:4]
+        betaout5[1:4] <- beta[5,1:4]
+        betaout6[1:4] <- beta[6,1:4]
+
+    for(g in 1:4) {omega[g] ~ dnorm(0, 0.001)} # coefficients for age, 1 = referent, not youngest age
+        TauBeta[1:4, 1:4] ~ dwish(W[,], 5)
+        SigmaBeta[1:4, 1:4] <- inverse(TauBeta[,])
+            sigmabeta1 <- SigmaBeta[1, 1:4] # this is just so we can pull it out of Jags and look at it.
+            sigmabeta2 <- SigmaBeta[2, 1:4]
+            sigmabeta3 <- SigmaBeta[3, 1:4]
+            sigmabeta4 <- SigmaBeta[4, 1:4]
+
+# Fixed Effects
+  for(p in 1:P) { # coefficients for predictors of incidence
+    gammapick[p] ~ dcat(inclusionprobability) # probability of including a covariate in the model, either as a main effect only or as a main effect & interaction
+    gamma[p] <- ifelse(gammapick[p]>1, gammaprior1[p], 0)
+    gamma_int1[p] <- ifelse(gammapick[p]==3, gammaprior2[p], 0)
+    gamma_int2[p] <- ifelse(gammapick[p]==3, gammaprior3[p], 0)
+    gamma_int3[p] <- ifelse(gammapick[p]==3, gammaprior4[p], 0)
+
+    gammaprior1[p] ~ dunif(-taugamma[1], taugamma[1])
+    gammaprior2[p] ~ dunif(-taugamma[2], taugamma[2])
+    gammaprior3[p] ~ dunif(-taugamma[3], taugamma[3])
+    gammaprior4[p] ~ dunif(-taugamma[4], taugamma[4])
+    } 
+for(q in 1:3) {inclusionprobability[q] <- 1/3} 
+for(qp in 1:4) {taugamma[qp] ~ dunif(1, ifelse(qp==2, 5, 4))} 
+
+# Observation process
+    psi ~ dbeta(1,1)  # surveillance coefficient
+    betaprob ~ dgamma(39.2289, 1/0.0039) # Blood culture
+}

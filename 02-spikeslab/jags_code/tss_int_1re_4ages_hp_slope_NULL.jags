@@ -1,0 +1,50 @@
+model{
+  for(i in 1:I) { # age-specific incidence data
+    cases[i] ~ dpois(lambda[i, ages[i]]*part[i]) # multiply by the participation rate... Don't sample that, we know that exactly.
+
+    lambda[i,1] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Infants 0-2
+    lambda[i,2] <- lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Pre-K: 2-5
+    lambda[i,3] <- lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 5-15
+    lambda[i,4] <- lambdad[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Adults 15+
+    
+    lambda[i,5] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 0-5 
+    lambda[i,6] <- lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 2-15
+    lambda[i,7] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, Children 0-15 
+    lambda[i,8] <- lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) + lambdad[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, 5+
+    lambda[i,9] <- lambdaa[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdab[i]*betau5[i]*ifelse(surv[i]==1, psi,1) + lambdac[i]*betao5[i]*ifelse(surv[i]==1, psi,1) + lambdad[i]*betao5[i]*ifelse(surv[i]==1, psi,1) # Observed rate, all ages
+
+    log(lambdaa[i]) <- alpha[country[i]] + zeta1[country[i]] + log(offseta[i]) # Young children, 0-1
+    log(lambdab[i]) <- alpha[country[i]] + zeta2[country[i]] + log(offsetb[i]) # Pre-K, 2-4
+    log(lambdac[i]) <- alpha[country[i]] + log(offsetc[i]) # Children 5-15
+    log(lambdad[i]) <- alpha[country[i]] + zeta3[country[i]] + log(offsetd[i]) # Adults, 15+
+    
+    betau5[i] <- (1-exp(-betaprob*amtu5[i]))
+    betao5[i] <- (1-exp(-betaprob*amto5[i]))
+    }
+
+# Random Effects - Intercept and slope
+    for(c in 1:C) { # random effects for each country
+    Bcraw[c, 1:4] ~ dmnorm(Braw, TauBraw[,])
+    alpha[c] <- Bcraw[c,1]
+    zeta1[c] <- Bcraw[c,2]
+    zeta2[c] <- Bcraw[c,3]
+    zeta3[c] <- Bcraw[c,4]
+    }
+   mu ~ dnorm(0, 0.001)
+    Braw[1] <- mu 
+   for(g in 1:3) {beta[g] ~ dnorm(0, 0.001)} # coefficients for age
+    Braw[2] <- beta[1]
+    Braw[3] <- beta[2]
+    Braw[4] <- beta[3]
+
+    TauBraw[1:4, 1:4] ~ dwish(W[,], 5) # W ID matrix; we have 5 dofs, i.e., 4 ranefs + 1, to ensure a uniform (-1, 1) prior for the correlation 
+    SigmaBraw[1:4, 1:4] <- inverse(TauBraw[,])
+    sigma1 <- SigmaBraw[1,]
+    sigma2 <- SigmaBraw[2,]
+    sigma3 <- SigmaBraw[3,]
+    sigma4 <- SigmaBraw[4,]
+
+# Observation process
+    psi ~ dbeta(1,1)  # surveillance coefficient
+    betaprob ~ dgamma(39.2289, 1/0.0039) # Blood culture
+}
