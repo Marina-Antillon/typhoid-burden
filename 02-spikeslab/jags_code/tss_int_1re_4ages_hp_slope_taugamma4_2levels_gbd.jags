@@ -1,13 +1,5 @@
 model{
 
-# TO DO:
-# input must include continent vector that tells me what continent each country is in. region[1]. 
-# country is still numbered 1:total number of countries anywhere (not by continent)
-# take mu out of init
-# beta is now a 6x4 matrix
-# TauBraw init: 6 for GBD super regions?
-# TauBeta into init
-
   for(i in 1:I) { # age-specific incidence data
     cases[i] ~ dpois(lambda[i, ages[i]]*part[i]) # multiply by the participation rate... Don't sample that, we know that exactly.
 
